@@ -1,4 +1,4 @@
-# farq
+# larq
 
 Fork of [samuelcolvin/arq](https://github.com/samuelcolvin/arq)
 
