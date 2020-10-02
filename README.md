@@ -6,4 +6,4 @@ Job queues in python with asyncio and redis.
 
 **narq** stands for **n**ext **arq**, and is a playground for design changes or other incompatible mods.
 
-See [documentation](https://arq-docs.helpmanual.io/) for more details.
+See [samuelcolvin/arq](https://github.com/samuelcolvin/arq) for documentation and basic details.  Local documentation will be updated to reflect breaking changes.
