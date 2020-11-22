@@ -9,7 +9,7 @@ from time import time
 import pytest
 from pytest_toolbox.comparison import AnyInt, CloseToNow
 
-from arq.connections import ArqRedis
+from arq.connections import ArqRedis, JobExistsException
 from arq.constants import default_queue_name
 from arq.jobs import Job, JobDef, SerializationError
 from arq.utils import timestamp_ms
@@ -71,8 +71,8 @@ async def test_job_info(arq_redis: ArqRedis):
 async def test_repeat_job(arq_redis: ArqRedis):
     j1 = await arq_redis.enqueue_job('foobar', _job_id='job_id')
     assert isinstance(j1, Job)
-    j2 = await arq_redis.enqueue_job('foobar', _job_id='job_id')
-    assert j2 is None
+    with pytest.raises(JobExistsException):
+        await arq_redis.enqueue_job('foobar', _job_id='job_id')
 
 
 async def test_defer_until(arq_redis: ArqRedis):
@@ -106,7 +106,7 @@ async def test_mung(arq_redis: ArqRedis, worker):
             [arq_redis.enqueue_job('count', i, _job_id=f'v-{i}'), arq_redis.enqueue_job('count', i, _job_id=f'v-{i}')]
         )
     shuffle(tasks)
-    await asyncio.gather(*tasks)
+    await asyncio.gather(*tasks, return_exceptions=True)
 
     worker: Worker = worker(functions=[func(count, name='count')])
     await worker.main()
@@ -207,7 +207,7 @@ async def test_get_jobs(arq_redis: ArqRedis):
 
 async def test_enqueue_multiple(arq_redis: ArqRedis, caplog):
     caplog.set_level(logging.DEBUG)
-    results = await asyncio.gather(*[arq_redis.enqueue_job('foobar', i, _job_id='testing') for i in range(10)])
-    assert sum(r is not None for r in results) == 1
-    assert sum(r is None for r in results) == 9
+    results = await asyncio.gather(*[arq_redis.enqueue_job('foobar', i, _job_id='testing') for i in range(10)], return_exceptions=True)
+    assert sum(not isinstance(r, JobExistsException) for r in results) == 1
+    assert sum(isinstance(r, JobExistsException) for r in results) == 9
     assert 'WatchVariableError' not in caplog.text

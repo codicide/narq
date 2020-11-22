@@ -46,6 +46,12 @@ class RedisSettings:
 expires_extra_ms = 86_400_000
 
 
+class JobExistsException(Exception):
+    def __init__(self, job_id: str):
+        super(JobExistsException, self).__init__()
+        self.job_id = job_id
+
+
 class ArqRedis(Redis):  # type: ignore
     """
     Thin subclass of ``aioredis.Redis`` which adds :func:`arq.connections.enqueue_job`.
@@ -81,7 +87,7 @@ class ArqRedis(Redis):  # type: ignore
         _expires: Union[None, int, float, timedelta] = None,
         _job_try: Optional[int] = None,
         **kwargs: Any,
-    ) -> Optional[Job]:
+    ) -> Job:
         """
         Enqueue a job.
 
@@ -94,7 +100,7 @@ class ArqRedis(Redis):  # type: ignore
         :param _expires: if the job still hasn't started after this duration, do not run it
         :param _job_try: useful when re-enqueueing jobs within a job
         :param kwargs: any keyword arguments to pass to the function
-        :return: :class:`arq.jobs.Job` instance or ``None`` if a job with this ID already exists
+        :return: :class:`arq.jobs.Job` instance.
         """
         if _queue_name is None:
             _queue_name = self.default_queue_name
@@ -113,7 +119,7 @@ class ArqRedis(Redis):  # type: ignore
             job_result_exists = pipe.exists(result_key_prefix + job_id)
             await pipe.execute()
             if await job_exists or await job_result_exists:
-                return None
+                raise JobExistsException(job_id)
 
             enqueue_time_ms = timestamp_ms()
             if _defer_until is not None:
@@ -135,7 +141,7 @@ class ArqRedis(Redis):  # type: ignore
                 # job got enqueued since we checked 'job_exists'
                 # https://github.com/samuelcolvin/arq/issues/131, avoid warnings in log
                 await asyncio.gather(*tr._results, return_exceptions=True)
-                return None
+                raise JobExistsException(job_id)
         return Job(job_id, redis=self, _queue_name=_queue_name, _deserializer=self.job_deserializer)
 
     async def _get_job_result(self, key: str) -> JobResult:

@@ -10,7 +10,7 @@ import msgpack
 import pytest
 from aioredis import create_redis_pool
 
-from arq.connections import ArqRedis
+from arq.connections import ArqRedis, JobExistsException
 from arq.constants import default_queue_name, health_check_key_suffix, job_key_prefix
 from arq.jobs import Job, JobStatus
 from arq.worker import (
@@ -507,12 +507,14 @@ async def test_repeat_job_result(arq_redis: ArqRedis, worker):
     assert isinstance(j1, Job)
     assert await j1.status() == JobStatus.queued
 
-    assert await arq_redis.enqueue_job('foobar', _job_id='job_id') is None
+    with pytest.raises(JobExistsException):
+        await arq_redis.enqueue_job('foobar', _job_id='job_id')
 
     await worker(functions=[foobar]).run_check()
     assert await j1.status() == JobStatus.complete
 
-    assert await arq_redis.enqueue_job('foobar', _job_id='job_id') is None
+    with pytest.raises(JobExistsException):
+        await arq_redis.enqueue_job('foobar', _job_id='job_id')
 
 
 async def test_queue_read_limit_equals_max_jobs(arq_redis: ArqRedis, worker):
