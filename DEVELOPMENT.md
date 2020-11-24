@@ -1,6 +1,13 @@
 
 # Development
 
+## Setup
+
+1. Create and activate a virtualenv with Python 3.6 or higher.
+2. Clone this repo into the new virtualenv directory
+3. `pip install -e .`
+
+
 ## Running Tests
 
 Some tests require an open `redis` instance running on localhost:6379
