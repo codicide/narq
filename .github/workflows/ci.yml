@@ -54,11 +54,6 @@ jobs:
         make test
         coverage xml
 
-    - uses: samuelcolvin/codecov-action@env-vars
-      with:
-        file: ./coverage.xml
-        env_vars: PYTHON,OS
-
   deploy:
     name: Deploy
     needs: test
