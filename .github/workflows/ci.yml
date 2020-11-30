@@ -7,8 +7,7 @@ on:
     tags:
       - '**'
   pull_request: {}
-  on: workflow_dispatch
-
+  workflow_dispatch:
 
 jobs:
   test:
