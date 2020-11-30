@@ -1,6 +1,5 @@
 import pytest
 from click.testing import CliRunner
-
 from narq.cli import cli
 
 
