@@ -1,5 +1,7 @@
-from arq.cli import cli
+import pytest
 from click.testing import CliRunner
+
+from arq.cli import cli
 
 
 async def foobar(ctx):
@@ -36,6 +38,7 @@ async def mock_awatch():
     yield [1]
 
 
+@pytest.mark.skip("Requires watchgod library")
 def test_run_watch(mocker):
     mocker.patch('watchgod.awatch', return_value=mock_awatch())
     runner = CliRunner()
