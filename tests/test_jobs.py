@@ -2,38 +2,38 @@ import asyncio
 import pickle
 
 import pytest
-from arq import Worker, func
-from arq.connections import ArqRedis, RedisSettings, create_pool
-from arq.constants import default_queue_name, in_progress_key_prefix, job_key_prefix, result_key_prefix
-from arq.jobs import DeserializationError, Job, JobResult, JobStatus, deserialize_job_raw, serialize_result
+from narq import Worker, func
+from narq.connections import NarqRedis, RedisSettings, create_pool
+from narq.constants import default_queue_name, in_progress_key_prefix, job_key_prefix, result_key_prefix
+from narq.jobs import DeserializationError, Job, JobResult, JobStatus, deserialize_job_raw, serialize_result
 from pytest_toolbox.comparison import CloseToNow
 
 
-async def test_job_in_progress(arq_redis: ArqRedis):
-    await arq_redis.set(in_progress_key_prefix + 'foobar', b'1')
-    j = Job('foobar', arq_redis)
+async def test_job_in_progress(narq_redis: NarqRedis):
+    await narq_redis.set(in_progress_key_prefix + 'foobar', b'1')
+    j = Job('foobar', narq_redis)
     assert JobStatus.in_progress == await j.status()
-    assert str(j) == '<arq job foobar>'
+    assert str(j) == '<narq job foobar>'
 
 
-async def test_unknown(arq_redis: ArqRedis):
-    j = Job('foobar', arq_redis)
+async def test_unknown(narq_redis: NarqRedis):
+    j = Job('foobar', narq_redis)
     assert JobStatus.not_found == await j.status()
     info = await j.info()
     assert info is None
 
 
-async def test_result_timeout(arq_redis: ArqRedis):
-    j = Job('foobar', arq_redis)
+async def test_result_timeout(narq_redis: NarqRedis):
+    j = Job('foobar', narq_redis)
     with pytest.raises(asyncio.TimeoutError):
         await j.result(0.1, pole_delay=0)
 
 
-async def test_enqueue_job(arq_redis: ArqRedis, worker, queue_name=default_queue_name):
+async def test_enqueue_job(narq_redis: NarqRedis, worker, queue_name=default_queue_name):
     async def foobar(ctx, *args, **kwargs):
         return 42
 
-    j = await arq_redis.enqueue_job('foobar', 1, 2, c=3, _queue_name=queue_name)
+    j = await narq_redis.enqueue_job('foobar', 1, 2, c=3, _queue_name=queue_name)
     assert isinstance(j, Job)
     assert JobStatus.queued == await j.status()
     worker: Worker = worker(functions=[func(foobar, name='foobar')], queue_name=queue_name)
@@ -54,7 +54,7 @@ async def test_enqueue_job(arq_redis: ArqRedis, worker, queue_name=default_queue
         finish_time=CloseToNow(),
         score=None,
     )
-    results = await arq_redis.all_job_results()
+    results = await narq_redis.all_job_results()
     assert results == [
         JobResult(
             function='foobar',
@@ -72,16 +72,16 @@ async def test_enqueue_job(arq_redis: ArqRedis, worker, queue_name=default_queue
     ]
 
 
-async def test_enqueue_job_alt_queue(arq_redis: ArqRedis, worker):
-    await test_enqueue_job(arq_redis, worker, queue_name='custom_queue')
+async def test_enqueue_job_alt_queue(narq_redis: NarqRedis, worker):
+    await test_enqueue_job(narq_redis, worker, queue_name='custom_queue')
 
 
 async def test_enqueue_job_nondefault_queue(worker):
-    """Test initializing arq_redis with a queue name, and the worker using it."""
-    arq_redis = await create_pool(RedisSettings(), default_queue_name='test_queue')
+    """Test initializing narq_redis with a queue name, and the worker using it."""
+    narq_redis = await create_pool(RedisSettings(), default_queue_name='test_queue')
     await test_enqueue_job(
-        arq_redis,
-        lambda functions, **_: worker(functions=functions, arq_redis=arq_redis, queue_name=None),
+        narq_redis,
+        lambda functions, **_: worker(functions=functions, narq_redis=narq_redis, queue_name=None),
         queue_name=None,
     )
 
@@ -113,11 +113,11 @@ async def test_custom_serializer():
     assert r2 == b'0123456789'
 
 
-async def test_deserialize_result(arq_redis: ArqRedis, worker):
+async def test_deserialize_result(narq_redis: NarqRedis, worker):
     async def foobar(ctx, a, b):
         return a + b
 
-    j = await arq_redis.enqueue_job('foobar', 1, 2)
+    j = await narq_redis.enqueue_job('foobar', 1, 2)
     assert JobStatus.queued == await j.status()
     worker: Worker = worker(functions=[func(foobar, name='foobar')])
     await worker.run_check()
@@ -125,15 +125,15 @@ async def test_deserialize_result(arq_redis: ArqRedis, worker):
     assert await j.result(pole_delay=0) == 3
     info = await j.info()
     assert info.args == (1, 2)
-    await arq_redis.set(result_key_prefix + j.job_id, b'invalid pickle data')
+    await narq_redis.set(result_key_prefix + j.job_id, b'invalid pickle data')
     with pytest.raises(DeserializationError, match='unable to deserialize job result'):
         assert await j.result(pole_delay=0) == 3
 
 
-async def test_deserialize_info(arq_redis: ArqRedis):
-    j = await arq_redis.enqueue_job('foobar', 1, 2)
+async def test_deserialize_info(narq_redis: NarqRedis):
+    j = await narq_redis.enqueue_job('foobar', 1, 2)
     assert JobStatus.queued == await j.status()
-    await arq_redis.set(job_key_prefix + j.job_id, b'invalid pickle data')
+    await narq_redis.set(job_key_prefix + j.job_id, b'invalid pickle data')
 
     with pytest.raises(DeserializationError, match='unable to deserialize job'):
         assert await j.info()
@@ -145,6 +145,6 @@ async def test_deserialize_job_raw():
         deserialize_job_raw(b'123')
 
 
-async def test_get_job_result(arq_redis: ArqRedis):
+async def test_get_job_result(narq_redis: NarqRedis):
     with pytest.raises(KeyError, match='job "foobar" not found'):
-        await arq_redis._get_job_result('foobar')
+        await narq_redis._get_job_result('foobar')

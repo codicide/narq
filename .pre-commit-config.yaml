@@ -1,4 +1,4 @@
-files: 'arq/.*|tests/.*'
+files: 'narq/.*|tests/.*'
 repos:
   - repo: https://github.com/psf/black
     rev: 19.10b0
@@ -21,4 +21,4 @@ repos:
     rev: v0.790
     hooks:
       - id: mypy
-        files: 'arq/.*'
+        files: 'narq/.*'

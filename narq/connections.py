@@ -17,7 +17,7 @@ from .constants import default_queue_name, job_key_prefix, result_key_prefix
 from .jobs import Deserializer, Job, JobDef, JobResult, Serializer, deserialize_job, serialize_job
 from .utils import timestamp_ms, to_ms, to_unix_ms
 
-logger = logging.getLogger('arq.connections')
+logger = logging.getLogger('narq.connections')
 
 
 class SSLContext(ssl.SSLContext):
@@ -35,7 +35,7 @@ class RedisSettings:
     """
     No-Op class used to hold redis connection redis_settings.
 
-    Used by :func:`arq.connections.create_pool` and :class:`arq.worker.Worker`.
+    Used by :func:`narq.connections.create_pool` and :class:`narq.worker.Worker`.
     """
 
     host: Union[str, List[Tuple[str, int]]] = 'localhost'
@@ -78,14 +78,14 @@ class JobExistsException(Exception):
         self.job_id = job_id
 
 
-class ArqRedis(Redis):  # type: ignore
+class NarqRedis(Redis):  # type: ignore
     """
-    Thin subclass of ``aioredis.Redis`` which adds :func:`arq.connections.enqueue_job`.
+    Thin subclass of ``aioredis.Redis`` which adds :func:`narq.connections.enqueue_job`.
 
-    :param redis_settings: an instance of ``arq.connections.RedisSettings``.
+    :param redis_settings: an instance of ``narq.connections.RedisSettings``.
     :param job_serializer: a function that serializes Python objects to bytes, defaults to pickle.dumps
     :param job_deserializer: a function that deserializes bytes into Python objects, defaults to pickle.loads
-    :param default_queue_name: the default queue name to use, defaults to ``arq.queue``.
+    :param default_queue_name: the default queue name to use, defaults to ``narq.queue``.
     :param kwargs: keyword arguments directly passed to ``aioredis.Redis``.
     """
 
@@ -126,8 +126,8 @@ class ArqRedis(Redis):  # type: ignore
         :param _expires: if the job still hasn't started after this duration, do not run it
         :param _job_try: useful when re-enqueueing jobs within a job
         :param kwargs: any keyword arguments to pass to the function
-        :return: :class:`arq.jobs.Job` instance.
-        :raises arq.connections.JobExistsException: if job ID already exists.
+        :return: :class:`narq.jobs.Job` instance.
+        :raises narq.connections.JobExistsException: if job ID already exists.
         """
         if _queue_name is None:
             _queue_name = self.default_queue_name
@@ -209,11 +209,11 @@ async def create_pool(
     job_serializer: Optional[Serializer] = None,
     job_deserializer: Optional[Deserializer] = None,
     default_queue_name: str = default_queue_name,
-) -> ArqRedis:
+) -> NarqRedis:
     """
     Create a new redis pool, retrying up to ``conn_retries`` times if the connection fails.
 
-    Similar to ``aioredis.create_redis_pool`` except it returns a :class:`arq.connections.ArqRedis` instance,
+    Similar to ``aioredis.create_redis_pool`` except it returns a :class:`narq.connections.ArqRedis` instance,
     thus allowing job enqueuing.
     """
     settings: RedisSettings = RedisSettings() if settings_ is None else settings_
@@ -237,7 +237,7 @@ async def create_pool(
 
     try:
         pool = await pool_factory(addr, db=settings.database, password=settings.password, encoding='utf8')
-        pool = ArqRedis(
+        pool = NarqRedis(
             pool,
             job_serializer=job_serializer,
             job_deserializer=job_deserializer,

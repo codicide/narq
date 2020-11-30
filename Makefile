@@ -17,7 +17,7 @@ testcov: test
 
 .PHONY: mypy
 mypy:
-	mypy arq
+	mypy narq
 
 .PHONY: all
 all: lint mypy testcov

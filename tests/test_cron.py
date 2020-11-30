@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from random import random
 
 import pytest
-from arq import Worker
-from arq.cron import cron, next_cron
+from narq import Worker
+from narq.cron import cron, next_cron
 
 
 @pytest.mark.parametrize(
@@ -102,7 +102,7 @@ async def test_job_successful(worker, caplog):
 
 async def test_job_successful_on_specific_queue(worker, caplog):
     caplog.set_level(logging.INFO)
-    worker: Worker = worker(queue_name='arq:test-cron-queue', cron_jobs=[cron(foobar, hour=1, run_at_startup=True)])
+    worker: Worker = worker(queue_name='narq:test-cron-queue', cron_jobs=[cron(foobar, hour=1, run_at_startup=True)])
     await worker.main()
     assert worker.jobs_complete == 1
     assert worker.jobs_failed == 0

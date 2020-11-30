@@ -9,10 +9,10 @@ if readme.exists():
 else:
     long_description = description + ".\n\nSee https://arq-docs.helpmanual.io/ for documentation."
 # avoid loading the package before requirements are installed:
-version = SourceFileLoader("version", "arq/version.py").load_module()
+version = SourceFileLoader("version", "narq/version.py").load_module()
 
 setup(
-    name="arq",
+    name="narq",
     version=version.VERSION,
     description=description,
     long_description=long_description,
@@ -46,12 +46,12 @@ setup(
     author_email="s@muelcolvin.com",
     url="https://github.com/samuelcolvin/arq",
     license="MIT",
-    packages=["arq"],
-    package_data={"arq": ["py.typed"]},
+    packages=["narq"],
+    package_data={"narq": ["py.typed"]},
     zip_safe=True,
     entry_points="""
         [console_scripts]
-        arq=arq.cli:cli
+        narq=narq.cli:cli
     """,
     install_requires=[
         "async-timeout>=3.0.0",

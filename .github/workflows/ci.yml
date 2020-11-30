@@ -84,7 +84,7 @@ jobs:
       - run: twine check dist/*
 
       - name: check tag
-        run: PACKAGE=arq python <(curl -Ls https://git.io/JvQsH)
+        run: PACKAGE=narq python <(curl -Ls https://git.io/JvQsH)
 
       - name: upload to pypi
         run: twine upload dist/*

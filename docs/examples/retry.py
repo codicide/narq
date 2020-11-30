@@ -1,7 +1,7 @@
 import asyncio
 from aiohttp import ClientSession
-from arq import create_pool, Retry
-from arq.connections import RedisSettings
+from narq import create_pool, Retry
+from narq.connections import RedisSettings
 
 async def download_content(ctx, url):
     session: ClientSession = ctx['session']
