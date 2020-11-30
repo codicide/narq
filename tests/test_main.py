@@ -14,6 +14,7 @@ from arq.constants import default_queue_name
 from arq.jobs import Job, JobDef, SerializationError
 from arq.utils import timestamp_ms
 from arq.worker import Retry, Worker, func
+from pytest_toolbox.comparison import AnyInt, CloseToNow
 
 
 async def test_enqueue_job(arq_redis: ArqRedis, worker):

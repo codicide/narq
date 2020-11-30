@@ -1,23 +1,10 @@
 .DEFAULT_GOAL := all
-isort = isort -rc arq tests
-black = black -S -l 120 --target-version py37 arq tests
 
 .PHONY: install
 install:
 	pip install -U pip setuptools
 	pip install -r requirements.txt
 	pip install -e .[watch]
-
-.PHONY: format
-format:
-	$(isort)
-	$(black)
-
-.PHONY: lint
-lint:
-	flake8 arq/ tests/
-	$(isort) --check-only -df
-	$(black) --check
 
 .PHONY: test
 test:

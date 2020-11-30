@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 
 import async_timeout
 from aioredis import MultiExecError
-from pydantic.utils import import_string
-
 from arq.cron import CronJob
 from arq.jobs import Deserializer, JobResult, SerializationError, Serializer, deserialize_job_raw, serialize_result
+from pydantic.utils import import_string
 
 from .connections import ArqRedis, RedisSettings, create_pool, log_redis_info
 from .constants import (

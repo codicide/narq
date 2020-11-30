@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from random import random
 
 import pytest
-
 from arq import Worker
 from arq.cron import cron, next_cron
 

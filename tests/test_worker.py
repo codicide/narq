@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 import msgpack
 import pytest
 from aioredis import create_redis_pool
-
 from arq.connections import ArqRedis, JobExistsException
 from arq.constants import default_queue_name, health_check_key_suffix, job_key_prefix
 from arq.jobs import Job, JobStatus
