@@ -1,6 +1,5 @@
-from click.testing import CliRunner
-
 from arq.cli import cli
+from click.testing import CliRunner
 
 
 async def foobar(ctx):

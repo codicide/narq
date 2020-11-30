@@ -44,7 +44,7 @@ jobs:
         pip freeze
 
     - name: lint
-      run: make lint
+      run: pre-commit run --all-files
 
     - name: mypy
       run: make mypy
