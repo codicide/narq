@@ -9,9 +9,7 @@ from time import time
 
 import msgpack
 import pytest
-from pytest_toolbox.comparison import AnyInt, CloseToNow
-
-from narq.connections import NarqRedis, JobExistsException
+from narq.connections import JobExistsException, NarqRedis
 from narq.constants import default_queue_name
 from narq.jobs import Job, JobDef, SerializationError
 from narq.utils import timestamp_ms
@@ -123,7 +121,9 @@ async def test_repeat_job(narq_redis: NarqRedis):
 
 
 async def test_defer_until(narq_redis: NarqRedis):
-    j1 = await narq_redis.enqueue_job('foobar', _job_id='job_id', _defer_until=datetime(2032, 1, 1, tzinfo=timezone.utc))
+    j1 = await narq_redis.enqueue_job(
+        'foobar', _job_id='job_id', _defer_until=datetime(2032, 1, 1, tzinfo=timezone.utc)
+    )
     assert isinstance(j1, Job)
     score = await narq_redis.zscore(default_queue_name, 'job_id')
     assert score == 1_956_528_000_000
@@ -254,7 +254,9 @@ async def test_get_jobs(narq_redis: NarqRedis):
 
 async def test_enqueue_multiple(narq_redis: NarqRedis, caplog):
     caplog.set_level(logging.DEBUG)
-    results = await asyncio.gather(*[narq_redis.enqueue_job('foobar', i, _job_id='testing') for i in range(10)], return_exceptions=True)
+    results = await asyncio.gather(
+        *[narq_redis.enqueue_job('foobar', i, _job_id='testing') for i in range(10)], return_exceptions=True
+    )
     assert sum(not isinstance(r, JobExistsException) for r in results) == 1
     assert sum(isinstance(r, JobExistsException) for r in results) == 9
     assert 'WatchVariableError' not in caplog.text

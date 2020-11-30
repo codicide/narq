@@ -72,6 +72,7 @@ expires_extra_ms = 86_400_000
 
 class JobExistsException(Exception):
     """Exception in the event that a job with the passed ID already exists."""
+
     def __init__(self, job_id: str):
         """Create exception, assigning job ID."""
         super(JobExistsException, self).__init__()
