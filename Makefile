@@ -8,7 +8,7 @@ install:
 
 .PHONY: test
 test:
-	pytest --cov=arq
+	pytest --cov=narq
 
 .PHONY: testcov
 testcov: test

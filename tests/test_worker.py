@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import msgpack
 import pytest
 from aioredis import create_redis_pool
-from narq.connections import NarqRedis, JobExistsException
+from narq.connections import JobExistsException, NarqRedis
 from narq.constants import default_queue_name, health_check_key_suffix, job_key_prefix
 from narq.jobs import Job, JobStatus
 from narq.worker import (
