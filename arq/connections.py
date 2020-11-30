@@ -103,6 +103,7 @@ class ArqRedis(Redis):  # type: ignore
         :param _job_try: useful when re-enqueueing jobs within a job
         :param kwargs: any keyword arguments to pass to the function
         :return: :class:`arq.jobs.Job` instance.
+        :raises arq.connections.JobExistsException: if job ID already exists.
         """
         if _queue_name is None:
             _queue_name = self.default_queue_name
