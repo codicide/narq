@@ -11,7 +11,7 @@ from aioredis import Redis
 from .constants import default_queue_name, in_progress_key_prefix, job_key_prefix, result_key_prefix
 from .utils import ms_to_datetime, poll, timestamp_ms
 
-logger = logging.getLogger('arq.jobs')
+logger = logging.getLogger('narq.jobs')
 
 Serializer = Callable[[Dict[str, Any]], bytes]
 Deserializer = Callable[[bytes], Dict[str, Any]]
@@ -132,7 +132,7 @@ class Job:
             return JobStatus.deferred if score > timestamp_ms() else JobStatus.queued
 
     def __repr__(self) -> str:
-        return f'<arq job {self.job_id}>'
+        return f'<narq job {self.job_id}>'
 
 
 class SerializationError(RuntimeError):

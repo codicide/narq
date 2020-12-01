@@ -11,11 +11,11 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 
 import async_timeout
 from aioredis import MultiExecError
-from arq.cron import CronJob
-from arq.jobs import Deserializer, JobResult, SerializationError, Serializer, deserialize_job_raw, serialize_result
+from narq.cron import CronJob
+from narq.jobs import Deserializer, JobResult, SerializationError, Serializer, deserialize_job_raw, serialize_result
 from pydantic.utils import import_string
 
-from .connections import ArqRedis, RedisSettings, create_pool, log_redis_info
+from .connections import NarqRedis, RedisSettings, create_pool, log_redis_info
 from .constants import (
     default_queue_name,
     health_check_key_suffix,
@@ -29,7 +29,7 @@ from .utils import args_to_string, ms_to_datetime, poll, timestamp_ms, to_ms, to
 if TYPE_CHECKING:
     from .typing import WorkerCoroutine, StartupShutdown, SecondsTimedelta, WorkerSettingsType  # noqa F401
 
-logger = logging.getLogger('arq.worker')
+logger = logging.getLogger('narq.worker')
 no_result = object()
 
 
@@ -124,9 +124,9 @@ class Worker:
     Main class for running jobs.
 
     :param functions: list of functions to register, can either be raw coroutine functions or the
-      result of :func:`arq.worker.func`.
+      result of :func:`narq.worker.func`.
     :param queue_name: queue name to get jobs from
-    :param cron_jobs:  list of cron jobs to run, use :func:`arq.cron.cron` to create them
+    :param cron_jobs:  list of cron jobs to run, use :func:`narq.cron.cron` to create them
     :param redis_settings: settings for creating a redis connection
     :param redis_pool: existing redis pool, generally None
     :param burst: whether to stop the worker once all jobs have been run
@@ -157,7 +157,7 @@ class Worker:
         queue_name: Optional[str] = default_queue_name,
         cron_jobs: Optional[Sequence[CronJob]] = None,
         redis_settings: RedisSettings = None,
-        redis_pool: ArqRedis = None,
+        redis_pool: NarqRedis = None,
         burst: bool = False,
         on_startup: Optional['StartupShutdown'] = None,
         on_shutdown: Optional['StartupShutdown'] = None,
@@ -253,7 +253,7 @@ class Worker:
 
     async def run_check(self, retry_jobs: Optional[bool] = None, max_burst_jobs: Optional[int] = None) -> int:
         """
-        Run :func:`arq.worker.Worker.async_run`, check for failed jobs and raise :class:`arq.worker.FailedJobs`
+        Run :func:`narq.worker.Worker.async_run`, check for failed jobs and raise :class:`narq.worker.FailedJobs`
         if any jobs have failed.
 
         :return: number of completed jobs
@@ -270,8 +270,8 @@ class Worker:
             return self.jobs_complete
 
     @property
-    def pool(self) -> ArqRedis:
-        return cast(ArqRedis, self._pool)
+    def pool(self) -> NarqRedis:
+        return cast(NarqRedis, self._pool)
 
     async def main(self) -> None:
         if self._pool is None:
@@ -652,7 +652,7 @@ async def async_check_health(
     redis_settings: Optional[RedisSettings], health_check_key: Optional[str] = None, queue_name: Optional[str] = None
 ) -> int:
     redis_settings = redis_settings or RedisSettings()
-    redis: ArqRedis = await create_pool(redis_settings)
+    redis: NarqRedis = await create_pool(redis_settings)
     queue_name = queue_name or default_queue_name
     health_check_key = health_check_key or (queue_name + health_check_key_suffix)
 

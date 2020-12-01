@@ -2,10 +2,10 @@ import logging
 import re
 from datetime import timedelta
 
-import arq.typing
-import arq.utils
+import narq.typing
+import narq.utils
 import pytest
-from arq.connections import RedisSettings, log_redis_info
+from narq.connections import RedisSettings, log_redis_info
 from pydantic import BaseModel, validator
 
 
@@ -19,10 +19,10 @@ def test_settings_changed():
 
 
 async def test_redis_timeout(mocker, create_pool):
-    mocker.spy(arq.utils.asyncio, 'sleep')
+    mocker.spy(narq.utils.asyncio, 'sleep')
     with pytest.raises(OSError):
         await create_pool(RedisSettings(port=0, conn_retry_delay=0))
-    assert arq.utils.asyncio.sleep.call_count == 5
+    assert narq.utils.asyncio.sleep.call_count == 5
 
 
 async def test_redis_sentinel_failure(create_pool):
@@ -71,29 +71,29 @@ async def test_redis_log(create_pool):
 
 
 def test_truncate():
-    assert arq.utils.truncate('123456', 4) == '123…'
+    assert narq.utils.truncate('123456', 4) == '123…'
 
 
 def test_args_to_string():
-    assert arq.utils.args_to_string((), {'d': 4}) == 'd=4'
-    assert arq.utils.args_to_string((1, 2, 3), {}) == '1, 2, 3'
-    assert arq.utils.args_to_string((1, 2, 3), {'d': 4}) == '1, 2, 3, d=4'
+    assert narq.utils.args_to_string((), {'d': 4}) == 'd=4'
+    assert narq.utils.args_to_string((1, 2, 3), {}) == '1, 2, 3'
+    assert narq.utils.args_to_string((1, 2, 3), {'d': 4}) == '1, 2, 3, d=4'
 
 
 @pytest.mark.parametrize(
     'input,output', [(timedelta(days=1), 86_400_000), (42, 42000), (42.123, 42123), (42.123_987, 42124), (None, None)]
 )
 def test_to_ms(input, output):
-    assert arq.utils.to_ms(input) == output
+    assert narq.utils.to_ms(input) == output
 
 
 @pytest.mark.parametrize('input,output', [(timedelta(days=1), 86400), (42, 42), (42.123, 42.123), (None, None)])
 def test_to_seconds(input, output):
-    assert arq.utils.to_seconds(input) == output
+    assert narq.utils.to_seconds(input) == output
 
 
 def test_typing():
-    assert 'OptionType' in arq.typing.__all__
+    assert 'OptionType' in narq.typing.__all__
 
 
 def test_redis_settings_validation():

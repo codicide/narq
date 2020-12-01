@@ -7,6 +7,7 @@ on:
     tags:
       - '**'
   pull_request: {}
+  workflow_dispatch:
 
 jobs:
   test:
@@ -54,11 +55,6 @@ jobs:
         make test
         coverage xml
 
-    - uses: samuelcolvin/codecov-action@env-vars
-      with:
-        file: ./coverage.xml
-        env_vars: PYTHON,OS
-
   deploy:
     name: Deploy
     needs: test
@@ -84,7 +80,7 @@ jobs:
       - run: twine check dist/*
 
       - name: check tag
-        run: PACKAGE=arq python <(curl -Ls https://git.io/JvQsH)
+        run: PACKAGE=narq python <(curl -Ls https://git.io/JvQsH)
 
       - name: upload to pypi
         run: twine upload dist/*

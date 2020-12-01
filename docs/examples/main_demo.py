@@ -1,7 +1,7 @@
 import asyncio
 from aiohttp import ClientSession
-from arq import create_pool
-from arq.connections import RedisSettings
+from narq import create_pool
+from narq.connections import RedisSettings
 
 async def download_content(ctx, url):
     session: ClientSession = ctx['session']
@@ -22,7 +22,7 @@ async def main():
         await redis.enqueue_job('download_content', url)
 
 # WorkerSettings defines the settings to use when creating the work,
-# it's used by the arq cli
+# it's used by the narq cli
 class WorkerSettings:
     functions = [download_content]
     on_startup = startup

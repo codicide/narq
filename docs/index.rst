@@ -47,7 +47,7 @@ Install
 
 Just::
 
-    pip install arq
+    pip install narq
 
 Redesigned to be less elegant?
 ------------------------------
@@ -96,20 +96,20 @@ To enqueue the jobs, simply run the script::
 
 To execute the jobs, either after running ``demo.py`` or before/during::
 
-    arq demo.WorkerSettings
+    narq demo.WorkerSettings
 
 Append ``--burst`` to stop the worker once all jobs have finished. See :class:`arq.worker.Worker` for more available
 properties of ``WorkerSettings``.
 
 You can also watch for changes and reload the worker when the source changes::
 
-    arq demo.WorkerSettings --watch path/to/src
+    narq demo.WorkerSettings --watch path/to/src
 
 This requires watchgod_ to be installed (``pip install watchgod``).
 
 For details on the *arq* CLI::
 
-    arq --help
+    narq --help
 
 Startup & Shutdown coroutines
 .............................
@@ -154,7 +154,7 @@ You can access job information, status and job results using the :class:`arq.job
 Retrying jobs and cancellation
 ..............................
 
-As described above, when an arq work shuts down any going jobs are cancelled immediately
+As described above, when an narq work shuts down any going jobs are cancelled immediately
 (via vanilla ``task.cancel()``, so a ``CancelledError`` will be raised). You can see this by running a slow job
 (eg. add ``await asyncio.sleep(5)``) and hitting ``Ctrl+C`` once it's started.
 
@@ -176,7 +176,7 @@ is alive and kicking (technically you can be sure it was alive and kicking ``hea
 
 You can run a health check with the CLI (assuming you're using the first example above)::
 
-    arq --check demo.WorkerSettings
+    narq --check demo.WorkerSettings
 
 The command will output the value of the health check if found;
 then exit ``0`` if the key was found and ``1`` if it was not.
@@ -231,16 +231,16 @@ may enable significant memory improvements over pickle:
 Reference
 ---------
 
-.. automodule:: arq.connections
+.. automodule:: narq.connections
    :members:
 
-.. automodule:: arq.worker
+.. automodule:: narq.worker
    :members: func, Retry, Worker
 
-.. automodule:: arq.cron
+.. automodule:: narq.cron
    :members: cron
 
-.. automodule:: arq.jobs
+.. automodule:: narq.jobs
    :members: JobStatus, Job
 
 .. include:: ../HISTORY.rst

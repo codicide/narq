@@ -2,8 +2,8 @@ import asyncio
 
 import msgpack  # installable with "pip install msgpack"
 
-from arq import create_pool
-from arq.connections import RedisSettings
+from narq import create_pool
+from narq.connections import RedisSettings
 
 
 async def the_task(ctx):

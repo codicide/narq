@@ -8,7 +8,7 @@ install:
 
 .PHONY: test
 test:
-	pytest --cov=arq
+	pytest --cov=narq
 
 .PHONY: testcov
 testcov: test
@@ -17,7 +17,7 @@ testcov: test
 
 .PHONY: mypy
 mypy:
-	mypy arq
+	mypy narq
 
 .PHONY: all
 all: lint mypy testcov

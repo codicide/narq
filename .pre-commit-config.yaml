@@ -1,10 +1,10 @@
-files: 'arq/.*|tests/.*'
+files: 'narq/.*|tests/.*'
 repos:
   - repo: https://github.com/psf/black
     rev: 19.10b0
     hooks:
       - id: black
-        language_version: python3.7
+        language_version: python3
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
@@ -21,4 +21,4 @@ repos:
     rev: v0.790
     hooks:
       - id: mypy
-        files: 'arq/.*'
+        files: 'narq/.*'

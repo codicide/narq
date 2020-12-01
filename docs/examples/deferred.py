@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime, timedelta
 
-from arq import create_pool
-from arq.connections import RedisSettings
+from narq import create_pool
+from narq.connections import RedisSettings
 
 async def the_task(ctx):
     print('this is the tasks, delay since enqueueing:', datetime.now() - ctx['enqueue_time'])

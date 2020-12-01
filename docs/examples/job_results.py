@@ -1,7 +1,7 @@
 import asyncio
 
-from arq import create_pool
-from arq.connections import RedisSettings
+from narq import create_pool
+from narq.connections import RedisSettings
 # requires `pip install devtools`, used for pretty printing of job info
 from devtools import debug
 
