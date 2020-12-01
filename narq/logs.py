@@ -1,9 +1,9 @@
+"""Log configuration for narq."""
 from typing import Any, Dict
 
 
 def default_log_config(verbose: bool) -> Dict[str, Any]:
-    """
-    Setup default config. for dictConfig.
+    """Retrieve default config setup for dictConfig.
 
     :param verbose: level: DEBUG if True, INFO if False
     :return: dict suitable for ``logging.config.dictConfig``

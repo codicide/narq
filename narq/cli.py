@@ -1,3 +1,4 @@
+"""All functions to support CLI actions."""
 import asyncio
 import logging.config
 import os
@@ -49,6 +50,7 @@ def cli(*, worker_settings: str, burst: bool, check: bool, watch: str, verbose: 
 
 
 async def watch_reload(path: str, worker_settings: 'WorkerSettingsType') -> None:
+    """Start with watchdog enabled."""
     try:
         from watchgod import awatch
     except ImportError as e:  # pragma: no cover

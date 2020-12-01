@@ -1,3 +1,4 @@
+"""Worker methods and objects for narq."""
 import asyncio
 import inspect
 import logging
@@ -35,6 +36,8 @@ no_result = object()
 
 @dataclass
 class Function:
+    """Function dataclass."""
+
     name: str
     coroutine: 'WorkerCoroutine'
     timeout_s: Optional[float]
@@ -50,8 +53,7 @@ def func(
     timeout: Optional['SecondsTimedelta'] = None,
     max_tries: Optional[int] = None,
 ) -> Function:
-    """
-    Wrapper for a job function which lets you configure more settings.
+    """Create a job, letting you configure more settings.
 
     :param coroutine: coroutine function to call, can be a string to import
     :param name: name for function, if None, ``coroutine.__qualname__`` is used
@@ -69,8 +71,10 @@ def func(
         coroutine_ = coroutine
 
     assert asyncio.iscoroutinefunction(coroutine_), f'{coroutine_} is not a coroutine function'
-    timeout = to_seconds(timeout)
-    keep_result = to_seconds(keep_result)
+    if timeout is not None:
+        timeout = to_seconds(timeout)
+    if keep_result is not None:
+        keep_result = to_seconds(keep_result)
 
     return Function(name or coroutine_.__qualname__, coroutine_, timeout, keep_result, max_tries)
 
@@ -83,28 +87,42 @@ class Retry(RuntimeError):
     """
 
     def __init__(self, defer: Optional['SecondsTimedelta'] = None):
+        """Create a retry object."""
         self.defer_score: Optional[int] = to_ms(defer)
 
     def __repr__(self) -> str:
+        """Representation of retry object."""
         return f'<Retry defer {(self.defer_score or 0) / 1000:0.2f}s>'
 
     def __str__(self) -> str:
+        """Represent a retry object as a string."""
         return repr(self)
 
 
 class JobExecutionFailed(RuntimeError):
+    """Error if job execution has failed."""
+
     def __eq__(self, other: Any) -> bool:
+        # TODO: Why is this here?
+        """Check if job execution errors are equal."""
         if isinstance(other, JobExecutionFailed):
             return self.args == other.args
         return False
 
 
 class FailedJobs(RuntimeError):
+    """Error... for multiple failed jobs.
+
+    Maybe?
+    """
+
     def __init__(self, count: int, job_results: List[JobResult]):
+        """Create a failed jobs object."""
         self.count = count
         self.job_results = job_results
 
     def __str__(self) -> str:
+        """Create a string representation of failed jobs."""
         if self.count == 1 and self.job_results:
             exc = self.job_results[0].result
             return f'1 job failed {exc!r}'
@@ -112,43 +130,18 @@ class FailedJobs(RuntimeError):
             return f'{self.count} jobs failed:\n' + '\n'.join(repr(r.result) for r in self.job_results)
 
     def __repr__(self) -> str:
+        """Create a represnation of failed jobs."""
         return f'<{str(self)}>'
 
 
 class RetryJob(RuntimeError):
+    """Exception class for a retry job."""
+
     pass
 
 
 class Worker:
-    """
-    Main class for running jobs.
-
-    :param functions: list of functions to register, can either be raw coroutine functions or the
-      result of :func:`narq.worker.func`.
-    :param queue_name: queue name to get jobs from
-    :param cron_jobs:  list of cron jobs to run, use :func:`narq.cron.cron` to create them
-    :param redis_settings: settings for creating a redis connection
-    :param redis_pool: existing redis pool, generally None
-    :param burst: whether to stop the worker once all jobs have been run
-    :param on_startup: coroutine function to run at startup
-    :param on_shutdown: coroutine function to run at shutdown
-    :param handle_signals: default true, register signal handlers,
-      set to false when running inside other async framework
-    :param max_jobs: maximum number of jobs to run at a time
-    :param job_timeout: default job timeout (max run time)
-    :param keep_result: default duration to keep job results for
-    :param poll_delay: duration between polling the queue for new jobs
-    :param queue_read_limit: the maximum number of jobs to pull from the queue each time it's polled; by default it
-                             equals ``max_jobs``
-    :param max_tries: default maximum number of times to retry a job
-    :param health_check_interval: how often to set the health check key
-    :param health_check_key: redis key under which health check is set
-    :param ctx: dictionary to hold extra user defined state
-    :param retry_jobs: whether to retry jobs on Retry or CancelledError or not
-    :param max_burst_jobs: the maximum number of jobs to process in burst mode (disabled with negative values)
-    :param job_serializer: a function that serializes Python objects to bytes, defaults to pickle.dumps
-    :param job_deserializer: a function that deserializes bytes into Python objects, defaults to pickle.loads
-    """
+    """Main class for running jobs."""
 
     def __init__(
         self,
@@ -176,6 +169,34 @@ class Worker:
         job_serializer: Optional[Serializer] = None,
         job_deserializer: Optional[Deserializer] = None,
     ):
+        """Create a worker.
+
+        :param functions: list of functions to register, can either be raw coroutine functions or the
+          result of :func:`narq.worker.func`.
+        :param queue_name: queue name to get jobs from
+        :param cron_jobs:  list of cron jobs to run, use :func:`narq.cron.cron` to create them
+        :param redis_settings: settings for creating a redis connection
+        :param redis_pool: existing redis pool, generally None
+        :param burst: whether to stop the worker once all jobs have been run
+        :param on_startup: coroutine function to run at startup
+        :param on_shutdown: coroutine function to run at shutdown
+        :param handle_signals: default true, register signal handlers,
+          set to false when running inside other async framework
+        :param max_jobs: maximum number of jobs to run at a time
+        :param job_timeout: default job timeout (max run time)
+        :param keep_result: default duration to keep job results for
+        :param poll_delay: duration between polling the queue for new jobs
+        :param queue_read_limit: the maximum number of jobs to pull from the queue each time it's polled; by default it
+                                 equals ``max_jobs``
+        :param max_tries: default maximum number of times to retry a job
+        :param health_check_interval: how often to set the health check key
+        :param health_check_key: redis key under which health check is set
+        :param ctx: dictionary to hold extra user defined state
+        :param retry_jobs: whether to retry jobs on Retry or CancelledError or not
+        :param max_burst_jobs: the maximum number of jobs to process in burst mode (disabled with negative values)
+        :param job_serializer: a function that serializes Python objects to bytes, defaults to pickle.dumps
+        :param job_deserializer: a function that deserializes bytes into Python objects, defaults to pickle.loads
+        """
         self.functions: Dict[str, Union[Function, CronJob]] = {f.name: f for f in map(func, functions)}
         if queue_name is None:
             if redis_pool is not None:
@@ -232,9 +253,7 @@ class Worker:
         self.job_deserializer = job_deserializer
 
     def run(self) -> None:
-        """
-        Sync function to run the worker, finally closes worker connections.
-        """
+        """Sync function to run the worker, finally closes worker connections."""
         self.main_task = self.loop.create_task(self.main())
         try:
             self.loop.run_until_complete(self.main_task)
@@ -245,18 +264,15 @@ class Worker:
             self.loop.run_until_complete(self.close())
 
     async def async_run(self) -> None:
-        """
-        Asynchronously run the worker, does not close connections. Useful when testing.
-        """
+        """Asynchronously run the worker, does not close connections. Useful when testing."""
         self.main_task = self.loop.create_task(self.main())
         await self.main_task
 
     async def run_check(self, retry_jobs: Optional[bool] = None, max_burst_jobs: Optional[int] = None) -> int:
-        """
-        Run :func:`narq.worker.Worker.async_run`, check for failed jobs and raise :class:`narq.worker.FailedJobs`
-        if any jobs have failed.
+        """Run :func:`narq.worker.Worker.async_run`, check for failed jobs.
 
         :return: number of completed jobs
+        :raises :class:`narq.worker.FailedJobs`: if any jobs have failed.
         """
         if retry_jobs is not None:
             self.retry_jobs = retry_jobs
@@ -271,9 +287,11 @@ class Worker:
 
     @property
     def pool(self) -> NarqRedis:
+        """Access pool of worker."""
         return cast(NarqRedis, self._pool)
 
     async def main(self) -> None:
+        """Start worker and run until complete."""
         if self._pool is None:
             self._pool = await create_pool(
                 self.redis_settings, job_serializer=self.job_serializer, job_deserializer=self.job_deserializer
@@ -298,9 +316,9 @@ class Worker:
                     return None
 
     async def _poll_iteration(self) -> None:
-        """
-        Get ids of pending jobs from the main queue sorted-set data structure and start those jobs, remove
-        any finished tasks from self.tasks.
+        """Get ids of pending jobs from the main queue sorted-set data structure and start those jobs.
+
+        Remove any finished tasks from self.tasks.
         """
         count = self.queue_read_limit
         if self.burst and self.max_burst_jobs >= 0:
@@ -326,9 +344,7 @@ class Worker:
         await self.heart_beat()
 
     async def start_jobs(self, job_ids: List[str]) -> None:
-        """
-        For each job id, get the job definition, check it's not running and start it in a task
-        """
+        """For each job id, get the job definition, check it's not running and start it in a task."""
         for job_id in job_ids:
             await self.sem.acquire()
             in_progress_key = in_progress_key_prefix + job_id
@@ -361,6 +377,10 @@ class Worker:
                     self.tasks.append(t)
 
     async def run_job(self, job_id: str, score: int) -> None:  # noqa: C901
+        """Run the passed job.
+
+        TODO: What is score for?
+        """
         start_ms = timestamp_ms()
         v, job_try, _ = await asyncio.gather(
             self.pool.get(job_key_prefix + job_id, encoding=None),
@@ -520,6 +540,12 @@ class Worker:
         result_timeout_s: Optional[float],
         incr_score: Optional[int],
     ) -> None:
+        """Finish the passed job ID.
+
+        Removes job from queue.
+
+        TODO: Does something with score?
+        """
         with await self.pool as conn:
             await conn.unwatch()
             tr = conn.multi_exec()
@@ -535,6 +561,7 @@ class Worker:
             await tr.execute()
 
     async def abort_job(self, job_id: str, result_data: Optional[bytes]) -> None:
+        """Abort the given job ID."""
         with await self.pool as conn:
             await conn.unwatch()
             tr = conn.multi_exec()
@@ -546,10 +573,12 @@ class Worker:
             await tr.execute()
 
     async def heart_beat(self) -> None:
+        """Run the heart beat method for this worker."""
         await self.record_health()
         await self.run_cron()
 
     async def run_cron(self) -> None:
+        """Run cron jobs for this worker."""
         n = datetime.now()
         job_futures = set()
 
@@ -569,6 +598,7 @@ class Worker:
         job_futures and await asyncio.gather(*job_futures)
 
     async def record_health(self) -> None:
+        """Record the health of this worker."""
         now_ts = time()
         if (now_ts - self._last_health_check) < self.health_check_interval:
             return
@@ -597,6 +627,7 @@ class Worker:
         return self.jobs_complete + self.jobs_retried + self.jobs_failed + len(self.tasks)
 
     def handle_sig(self, signum: Signals) -> None:
+        """Handle process signal for shutdown."""
         sig = Signals(signum)
         logger.info(
             'shutdown on %s ◆ %d jobs complete ◆ %d failed ◆ %d retries ◆ %d ongoing to cancel',
@@ -613,6 +644,7 @@ class Worker:
         self.on_stop and self.on_stop(sig)
 
     async def close(self) -> None:
+        """Close worker connections."""
         if not self._handle_signals:
             self.handle_sig(signal.SIGUSR1)
         if not self._pool:
@@ -626,6 +658,7 @@ class Worker:
         self._pool = None
 
     def __repr__(self) -> str:
+        """Represent a worker."""
         return (
             f'<Worker j_complete={self.jobs_complete} j_failed={self.jobs_failed} j_retried={self.jobs_retried} '
             f'j_ongoing={sum(not t.done() for t in self.tasks)}>'
@@ -633,16 +666,19 @@ class Worker:
 
 
 def get_kwargs(settings_cls: 'WorkerSettingsType') -> Dict[str, NameError]:
+    """Return the keywords from the WorkerSettings."""
     worker_args = set(inspect.signature(Worker).parameters.keys())
     d = settings_cls if isinstance(settings_cls, dict) else settings_cls.__dict__
     return {k: v for k, v in d.items() if k in worker_args}
 
 
 def create_worker(settings_cls: 'WorkerSettingsType', **kwargs: Any) -> Worker:
+    """Create a worker from the given settings class."""
     return Worker(**{**get_kwargs(settings_cls), **kwargs})  # type: ignore
 
 
 def run_worker(settings_cls: 'WorkerSettingsType', **kwargs: Any) -> Worker:
+    """Run a worker based on the given settings class."""
     worker = create_worker(settings_cls, **kwargs)
     worker.run()
     return worker
@@ -651,6 +687,7 @@ def run_worker(settings_cls: 'WorkerSettingsType', **kwargs: Any) -> Worker:
 async def async_check_health(
     redis_settings: Optional[RedisSettings], health_check_key: Optional[str] = None, queue_name: Optional[str] = None
 ) -> int:
+    """Check the health of the worker."""
     redis_settings = redis_settings or RedisSettings()
     redis: NarqRedis = await create_pool(redis_settings)
     queue_name = queue_name or default_queue_name
@@ -669,8 +706,8 @@ async def async_check_health(
 
 
 def check_health(settings_cls: 'WorkerSettingsType') -> int:
-    """
-    Run a health check on the worker and return the appropriate exit code.
+    """Run a health check on the worker and return the appropriate exit code.
+
     :return: 0 if successful, 1 if not
     """
     cls_kwargs = get_kwargs(settings_cls)

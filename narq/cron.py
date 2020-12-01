@@ -1,3 +1,4 @@
+"""Module for all cron job related functionality."""
 import asyncio
 import dataclasses
 from dataclasses import dataclass
@@ -12,6 +13,8 @@ from .utils import to_seconds
 
 @dataclass
 class Options:
+    """Cron options dataclass."""
+
     month: OptionType
     day: OptionType
     weekday: WeekdayOptionType
@@ -32,9 +35,7 @@ def next_cron(
     second: OptionType = 0,
     microsecond: int = 123_456,
 ) -> datetime:
-    """
-    Find the next datetime matching the given parameters.
-    """
+    """Find the next datetime matching the given parameters."""
     dt = previous_dt + timedelta(seconds=1)
     if isinstance(weekday, str):
         weekday = WEEKDAYS.index(weekday.lower())
@@ -91,6 +92,8 @@ def _get_next_dt(dt_: datetime, options: Options) -> Optional[datetime]:  # noqa
 
 @dataclass
 class CronJob:
+    """Cron job dataclass."""
+
     name: str
     coroutine: WorkerCoroutine
     month: OptionType
@@ -108,6 +111,7 @@ class CronJob:
     next_run: Optional[datetime] = None
 
     def set_next(self, dt: datetime) -> None:
+        """Set the next run time for this job."""
         self.next_run = next_cron(
             dt,
             month=self.month,
@@ -120,6 +124,7 @@ class CronJob:
         )
 
     def __repr__(self) -> str:
+        """Representation of cron job."""
         return '<CronJob {}>'.format(' '.join(f'{k}={v}' for k, v in self.__dict__.items()))
 
 
@@ -140,8 +145,7 @@ def cron(
     keep_result: Optional[float] = 0,
     max_tries: Optional[int] = 1,
 ) -> CronJob:
-    """
-    Create a cron job, eg. it should be executed at specific times.
+    """Create a cron job, eg. it should be executed at specific times.
 
     Workers will enqueue this job at or just after the set times. If ``unique`` is true (the default) the
     job will only be run once even if multiple workers are running.
@@ -162,7 +166,6 @@ def cron(
     :param keep_result: how long to keep the result for
     :param max_tries: maximum number of tries for the job
     """
-
     if isinstance(coroutine, str):
         name = name or 'cron:' + coroutine
         coroutine_: WorkerCoroutine = import_string(coroutine)
@@ -170,8 +173,11 @@ def cron(
         coroutine_ = coroutine
 
     assert asyncio.iscoroutinefunction(coroutine_), f'{coroutine_} is not a coroutine function'
-    timeout = to_seconds(timeout)
-    keep_result = to_seconds(keep_result)
+    if timeout is not None:
+        timeout = to_seconds(timeout)
+
+    if keep_result is not None:
+        keep_result = to_seconds(keep_result)
 
     return CronJob(
         name or 'cron:' + coroutine_.__qualname__,

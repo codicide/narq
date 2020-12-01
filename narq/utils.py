@@ -1,3 +1,4 @@
+"""Utility methods for narq."""
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
@@ -11,35 +12,27 @@ if TYPE_CHECKING:
 
 
 def as_int(f: float) -> int:
+    """Convert a float to an int."""
     return int(round(f))
 
 
 def timestamp_ms() -> int:
+    """Get the current time in milliseconds."""
     return as_int(time() * 1000)
 
 
 def to_unix_ms(dt: datetime) -> int:
-    """
-    convert a datetime to epoch with milliseconds as int
-    """
+    """Convert a datetime to epoch with milliseconds as int."""
     return as_int(dt.timestamp() * 1000)
 
 
 def ms_to_datetime(unix_ms: int) -> datetime:
+    """Convert unix timestamp in milliseconds to datetime."""
     return datetime.fromtimestamp(unix_ms / 1000, tz=timezone.utc)
 
 
-@overload
-def to_ms(td: None) -> None:
-    pass
-
-
-@overload
-def to_ms(td: 'SecondsTimedelta') -> int:
-    pass
-
-
 def to_ms(td: Optional['SecondsTimedelta']) -> Optional[int]:
+    """Convert a timedelta in seconds to milliseconds.  Returns None if None is passed."""
     if td is None:
         return td
     elif isinstance(td, timedelta):
@@ -47,25 +40,15 @@ def to_ms(td: Optional['SecondsTimedelta']) -> Optional[int]:
     return as_int(td * 1000)
 
 
-@overload
-def to_seconds(td: None) -> None:
-    pass
-
-
-@overload
 def to_seconds(td: 'SecondsTimedelta') -> float:
-    pass
-
-
-def to_seconds(td: Optional['SecondsTimedelta']) -> Optional[float]:
-    if td is None:
-        return td
-    elif isinstance(td, timedelta):
+    """Convert a timedelta in seconds to seconds.  Returns None if None is passed."""
+    if isinstance(td, timedelta):
         return td.total_seconds()
     return td
 
 
 async def poll(step: float = 0.5) -> AsyncGenerator[float, None]:
+    """Poll indefinitely every `step` seconds."""
     loop = asyncio.get_event_loop()
     start = loop.time()
     while True:
@@ -80,8 +63,7 @@ DEFAULT_CURTAIL = 80
 
 
 def truncate(s: str, length: int = DEFAULT_CURTAIL) -> str:
-    """
-    Truncate a string and add an ellipsis (three dots) to the end if it was too long
+    """Truncate a string and add an ellipsis (three dots) to the end if it was too long.
 
     :param s: string to possibly truncate
     :param length: length to truncate the string to
@@ -92,6 +74,7 @@ def truncate(s: str, length: int = DEFAULT_CURTAIL) -> str:
 
 
 def args_to_string(args: Sequence[Any], kwargs: Dict[str, Any]) -> str:
+    """Convert args to string.  Useful for printing.  Truncate the result to 80 characters max."""
     arguments = ''
     if args:
         arguments = ', '.join(map(repr, args))
