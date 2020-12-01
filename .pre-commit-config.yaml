@@ -11,6 +11,8 @@ repos:
     hooks:
       - id: flake8
         language: python
+        additional_dependencies: [ flake8-docstrings ]
+        files: 'narq/*'
 
   - repo: https://github.com/pycqa/isort
     rev: 4.3.21

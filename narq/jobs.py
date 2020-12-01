@@ -1,3 +1,4 @@
+"""Module to manage all job classes."""
 import asyncio
 import logging
 import pickle
@@ -18,9 +19,7 @@ Deserializer = Callable[[bytes], Dict[str, Any]]
 
 
 class JobStatus(str, Enum):
-    """
-    Enum of job statuses.
-    """
+    """Enum of job statuses."""
 
     #: job is in the queue, time it should be run not yet reached
     deferred = 'deferred'
@@ -36,6 +35,8 @@ class JobStatus(str, Enum):
 
 @dataclass
 class JobDef:
+    """Job definition dataclass."""
+
     function: str
     args: Tuple[Any, ...]
     kwargs: Dict[str, Any]
@@ -46,6 +47,8 @@ class JobDef:
 
 @dataclass
 class JobResult(JobDef):
+    """Job result dataclass."""
+
     success: bool
     result: Any
     start_time: datetime
@@ -54,9 +57,7 @@ class JobResult(JobDef):
 
 
 class Job:
-    """
-    Holds data a reference to a job.
-    """
+    """Holds data a reference to a job."""
 
     __slots__ = 'job_id', '_redis', '_queue_name', '_deserializer'
 
@@ -67,15 +68,16 @@ class Job:
         _queue_name: str = default_queue_name,
         _deserializer: Optional[Deserializer] = None,
     ):
+        """Create a new job from a job ID."""
         self.job_id = job_id
         self._redis = redis
         self._queue_name = _queue_name
         self._deserializer = _deserializer
 
     async def result(self, timeout: Optional[float] = None, *, pole_delay: float = 0.5) -> Any:
-        """
-        Get the result of the job, including waiting if it's not yet available. If the job raised an exception,
-        it will be raised here.
+        """Get the result of the job, including waiting if it's not yet available.
+
+        If the job raised an exception, it will be raised here.
 
         :param timeout: maximum time to wait for the job result before raising ``TimeoutError``, will wait forever
         :param pole_delay: how often to poll redis for the job result
@@ -94,9 +96,7 @@ class Job:
                 raise asyncio.TimeoutError()
 
     async def info(self) -> Optional[JobDef]:
-        """
-        All information on a job, including its result if it's available, does not wait for the result.
-        """
+        """All information on a job, including its result if it's available, does not wait for the result."""
         info: Optional[JobDef] = await self.result_info()
         if not info:
             v = await self._redis.get(job_key_prefix + self.job_id, encoding=None)
@@ -107,9 +107,9 @@ class Job:
         return info
 
     async def result_info(self) -> Optional[JobResult]:
-        """
-        Information about the job result if available, does not wait for the result. Does not raise an exception
-        even if the job raised one.
+        """Information about the job result if available, does not wait for the result.
+
+        Does not raise an exception even if the job raised one.
         """
         v = await self._redis.get(result_key_prefix + self.job_id, encoding=None)
         if v:
@@ -118,9 +118,7 @@ class Job:
             return None
 
     async def status(self) -> JobStatus:
-        """
-        Status of the job.
-        """
+        """Status of the job."""
         if await self._redis.exists(result_key_prefix + self.job_id):
             return JobStatus.complete
         elif await self._redis.exists(in_progress_key_prefix + self.job_id):
@@ -132,14 +130,19 @@ class Job:
             return JobStatus.deferred if score > timestamp_ms() else JobStatus.queued
 
     def __repr__(self) -> str:
+        """Represent a job."""
         return f'<narq job {self.job_id}>'
 
 
 class SerializationError(RuntimeError):
+    """Error serializing object."""
+
     pass
 
 
 class DeserializationError(SerializationError):
+    """Error deserializing object."""
+
     pass
 
 
@@ -152,6 +155,16 @@ def serialize_job(
     *,
     serializer: Optional[Serializer] = None,
 ) -> Optional[bytes]:
+    """Given job data, serialize it into bytes.
+
+    :param function_name:
+    :param args:
+    :param kwargs:
+    :param job_try:
+    :param enqueue_time_ms:
+    :param serializer:
+    :return:
+    """
     data = {'t': job_try, 'f': function_name, 'a': args, 'k': kwargs, 'et': enqueue_time_ms}
     if serializer is None:
         serializer = pickle.dumps
@@ -175,6 +188,21 @@ def serialize_result(
     *,
     serializer: Optional[Serializer] = None,
 ) -> Optional[bytes]:
+    """Given job info, serializes them into bytes.
+
+    :param function: The function name to call.
+    :param args: tuple of args to pass to the function.
+    :param kwargs: dict of kwargs to pass to the function.
+    :param job_try: the number of tries the job took.
+    :param enqueue_time_ms: time in milliseconds that the jobs was enqueued.
+    :param success: flag indicating if the job was successful.
+    :param result: result data from the job.
+    :param start_ms: the unix timestamp of when the job started.
+    :param finished_ms: the unix timestamp of when the job finished.
+    :param ref: TODO: What is this thing?
+    :param serializer: Optional serializer to use for serialization.  If not set, pickle is used.
+    :return: bytes representing the passed data as a dict.
+    """
     data = {
         't': job_try,
         'f': function,
@@ -203,6 +231,13 @@ def serialize_result(
 
 
 def deserialize_job(r: bytes, *, deserializer: Optional[Deserializer] = None) -> JobDef:
+    """Given bytes, deserializes them into a JobDef.
+
+    :param r: bytes to deserialize.
+    :param deserializer: Optional serializer to use for deserialization.  If not set, pickle is used.
+    :return: A JobDef.
+    :raises DeserializationError: If bytes cannot be converted to JobDef.
+    """
     if deserializer is None:
         deserializer = pickle.loads
     try:
@@ -222,6 +257,13 @@ def deserialize_job(r: bytes, *, deserializer: Optional[Deserializer] = None) ->
 def deserialize_job_raw(
     r: bytes, *, deserializer: Optional[Deserializer] = None
 ) -> Tuple[str, Tuple[Any, ...], Dict[str, Any], int, int]:
+    """Given bytes, deserializes them into a Tuple.
+
+    :param r: bytes to deserialize.
+    :param deserializer: Optional serializer to use for deserialization.  If not set, pickle is used.
+    :return: A Tuple, holding the job information.
+    :raises DeserializationError: If bytes cannot be converted to Tuple.
+    """
     if deserializer is None:
         deserializer = pickle.loads
     try:
@@ -232,6 +274,13 @@ def deserialize_job_raw(
 
 
 def deserialize_result(r: bytes, *, deserializer: Optional[Deserializer] = None) -> JobResult:
+    """Given bytes, deserializes them into a JobResult object.
+
+    :param r: bytes to deserialize.
+    :param deserializer: Optional serializer to use for deserialization.  If not set, pickle is used.
+    :return: A JobResult object.
+    :raises DeserializationError: If bytes cannot be converted to JobResult.
+    """
     if deserializer is None:
         deserializer = pickle.loads
     try:

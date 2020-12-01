@@ -1,3 +1,4 @@
+"""Module for all connection objects in narq."""
 import asyncio
 import functools
 import logging
@@ -21,19 +22,20 @@ logger = logging.getLogger('narq.connections')
 
 
 class SSLContext(ssl.SSLContext):
-    """
-    Required to avoid problems with
+    """Required to avoid problems with SSL.
+
+    TODO: Why is this necessary?
     """
 
     @classmethod
     def __get_validators__(cls) -> Generator[Callable[..., Any], None, None]:
+        """Get validators for class."""
         yield make_arbitrary_type_validator(ssl.SSLContext)
 
 
 @dataclass
 class RedisSettings:
-    """
-    No-Op class used to hold redis connection redis_settings.
+    """No-Op class used to hold redis connection redis_settings.
 
     Used by :func:`narq.connections.create_pool` and :class:`narq.worker.Worker`.
     """
@@ -52,6 +54,7 @@ class RedisSettings:
 
     @classmethod
     def from_dsn(cls, dsn: str) -> 'RedisSettings':
+        """Create a settings object from a DSN string."""
         conf = urlparse(dsn)
         assert conf.scheme in {'redis', 'rediss'}, 'invalid DSN scheme'
         return RedisSettings(
@@ -63,6 +66,7 @@ class RedisSettings:
         )
 
     def __repr__(self) -> str:
+        """Represent redis settings."""
         return 'RedisSettings({})'.format(', '.join(f'{k}={v!r}' for k, v in self.__dict__.items()))
 
 
@@ -98,6 +102,7 @@ class NarqRedis(Redis):  # type: ignore
         default_queue_name: str = default_queue_name,
         **kwargs: Any,
     ) -> None:
+        """Create a narq redis connection."""
         self.job_serializer = job_serializer
         self.job_deserializer = job_deserializer
         self.default_queue_name = default_queue_name
@@ -182,9 +187,7 @@ class NarqRedis(Redis):  # type: ignore
         return r
 
     async def all_job_results(self) -> List[JobResult]:
-        """
-        Get results for all jobs in redis.
-        """
+        """Get results for all jobs in redis."""
         keys = await self.keys(result_key_prefix + '*')
         results = await asyncio.gather(*[self._get_job_result(k) for k in keys])
         return sorted(results, key=attrgetter('enqueue_time'))
@@ -196,9 +199,7 @@ class NarqRedis(Redis):  # type: ignore
         return jd
 
     async def queued_jobs(self, *, queue_name: str = default_queue_name) -> List[JobDef]:
-        """
-        Get information about queued, mostly useful when testing.
-        """
+        """Get information about queued, mostly useful when testing."""
         jobs = await self.zrange(queue_name, withscores=True)
         return await asyncio.gather(*[self._get_job_def(job_id, score) for job_id, score in jobs])
 
@@ -274,6 +275,7 @@ async def create_pool(
 
 
 async def log_redis_info(redis: Redis, log_func: Callable[[str], Any]) -> None:
+    """Log information about redis status."""
     with await redis as r:
         info, key_count = await asyncio.gather(r.info(), r.dbsize())
     log_func(
