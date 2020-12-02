@@ -70,10 +70,6 @@ class RedisSettings:
         return 'RedisSettings({})'.format(', '.join(f'{k}={v!r}' for k, v in self.__dict__.items()))
 
 
-# extra time after the job is expected to start when the job key should expire, 1 day in ms
-expires_extra_ms = 86_400_000
-
-
 class JobExistsException(Exception):
     """Exception in the event that a job with the passed ID already exists."""
 
@@ -129,7 +125,7 @@ class NarqRedis(Redis):  # type: ignore
         :param _queue_name: queue of the job, can be used to create job in different queue
         :param _defer_until: datetime at which to run the job
         :param _defer_by: duration to wait before running the job
-        :param _expires: if the job still hasn't started after this duration, do not run it
+        :param _expires: if the job still hasn't started after this duration, do not run it. If None, no expiration.
         :param _job_try: useful when re-enqueueing jobs within a job
         :param kwargs: any keyword arguments to pass to the function
         :return: :class:`narq.jobs.Job` instance.
@@ -162,11 +158,14 @@ class NarqRedis(Redis):  # type: ignore
             else:
                 score = enqueue_time_ms
 
-            expires_ms = expires_ms or score - enqueue_time_ms + expires_extra_ms
-
             job = serialize_job(function, args, kwargs, _job_try, enqueue_time_ms, serializer=self.job_serializer)
             tr = conn.multi_exec()
-            tr.psetex(job_key, expires_ms, job)
+
+            if expires_ms:
+                tr.psetex(job_key, expires_ms, job)
+            else:
+                tr.set(job_key, job)
+
             tr.zadd(_queue_name, score, job_id)
             try:
                 await tr.execute()
