@@ -61,5 +61,4 @@ setup(
         'dataclasses>=0.6;python_version == "3.6"',
         'typing-extensions>=3.7;python_version < "3.8"',
     ],
-    extras_require={"watch": ["watchgod>=0.4"],},
 )

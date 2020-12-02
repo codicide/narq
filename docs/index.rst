@@ -10,37 +10,37 @@ Current Version: |version|
 
 Job queues and RPC in python with asyncio and redis.
 
-*arq* was conceived as a simple, modern and performant successor to rq_.
+*narq* was conceived as a simple, modern and performant successor to rq_.
 
 .. warning::
 
-   In ``v0.16`` *arq* was **COMPLETELY REWRITTEN** to use an entirely different approach to registering workers,
-   enqueueing jobs and processing jobs. You will need to either keep using ``v0.15`` or entirely rewrite you *arq*
+   In ``v0.16`` *narq* was **COMPLETELY REWRITTEN** to use an entirely different approach to registering workers,
+   enqueueing jobs and processing jobs. You will need to either keep using ``v0.15`` or entirely rewrite you *narq*
    integration to use ``v0.16``.
 
    See `here <./old/index.html>`_ for old docs.
 
-Why use *arq*?
+Why use *narq*?
 
 **non-blocking**
-    *arq* is built using python 3's asyncio_ allowing
+    *narq* is built using python 3's asyncio_ allowing
     non-blocking job enqueuing and execution. Multiple jobs (potentially hundreds) can be run simultaneously
     using a pool of *asyncio* ``Tasks``.
 
 **powerful-features**
     Deferred execution, easy retrying of jobs, and pessimistic execution (:ref:`see below <usage>`)
-    means *arq* is great for critical jobs that **must** be completed.
+    means *narq* is great for critical jobs that **must** be completed.
 
 **fast**
-    Asyncio and no forking make *arq* around 7x faster than
+    Asyncio and no forking make *narq* around 7x faster than
     *rq* for short jobs with no io. With io that might increase to around 40x
     faster. (TODO)
 
 **elegant**
-    I'm a long time contributor to and user of `rq`_, *arq* is designed to be simpler, clearer and more powerful.
+    I'm a long time contributor to and user of `rq`_, *narq* is designed to be simpler, clearer and more powerful.
 
 **small**
-    and easy to reason with - currently *arq* is only about 700 lines, that won't change significantly.
+    and easy to reason with - currently *narq* is only about 700 lines, that won't change significantly.
 
 Install
 -------
@@ -52,8 +52,8 @@ Just::
 Redesigned to be less elegant?
 ------------------------------
 
-The approach used in *arq* ``v0.16`` of enqueueing jobs by name rather than "just calling a function" and knowing it
-will be called on the worker (as used in *arq* ``<= v0.15``, rq, celery et al.) might seem less elegant,
+The approach used in *narq* ``v0.16`` of enqueueing jobs by name rather than "just calling a function" and knowing it
+will be called on the worker (as used in *narq* ``<= v0.15``, rq, celery et al.) might seem less elegant,
 but it's for good reason.
 
 This approach means your frontend (calling the worker) doesn't need access to the worker code,
@@ -68,20 +68,20 @@ Usage
 
    **Jobs may be called more than once!**
 
-   *arq* v0.16 has what I'm calling "pessimistic execution": jobs aren't removed from the queue until they've either
+   *narq* v0.16 has what I'm calling "pessimistic execution": jobs aren't removed from the queue until they've either
    succeeded or failed. If the worker shuts down, the job will be cancelled immediately and will remain in the queue
    to be run again when the worker starts up again (or run by another worker which is still running).
 
-   (This differs from other similar libraries like *arq* ``<= v0.15``, rq, celery et al. where jobs generally don't get
+   (This differs from other similar libraries like *narq* ``<= v0.15``, rq, celery et al. where jobs generally don't get
    rerun when a worker shuts down. This in turn requires complex logic to try and let jobs finish before
    shutting down (I wrote the ``HerokuWorker`` for rq), however this never really works unless either: all jobs take
    less than 6 seconds or your worker never shuts down when a job is running (impossible).)
 
-   All *arq* jobs should therefore be designed to cope with being called repeatedly if they're cancelled,
+   All *narq* jobs should therefore be designed to cope with being called repeatedly if they're cancelled,
    eg. use database transactions, idempotency keys or redis to mark when an API request or similar has succeeded
    to avoid making it twice.
 
-   **In summary:** sometimes *exactly once* can be hard or impossible, *arq* favours multiple times over zero times.
+   **In summary:** sometimes *exactly once* can be hard or impossible, *narq* favours multiple times over zero times.
 
 Simple Usage
 ............
@@ -101,13 +101,7 @@ To execute the jobs, either after running ``demo.py`` or before/during::
 Append ``--burst`` to stop the worker once all jobs have finished. See :class:`arq.worker.Worker` for more available
 properties of ``WorkerSettings``.
 
-You can also watch for changes and reload the worker when the source changes::
-
-    narq demo.WorkerSettings --watch path/to/src
-
-This requires watchgod_ to be installed (``pip install watchgod``).
-
-For details on the *arq* CLI::
+For details on the *narq* CLI::
 
     narq --help
 
@@ -135,7 +129,7 @@ Job Uniqueness
 Sometimes you want a job to only be run once at a time (eg. a backup) or once for a given parameter (eg. generating
 invoices for a particular company).
 
-*arq* supports this via custom job ids, see see :func:`arq.connections.ArqRedis.enqueue_job`. It guarantees
+*narq* supports this via custom job ids, see see :func:`arq.connections.ArqRedis.enqueue_job`. It guarantees
 that a job with a particular ID cannot be enqueued again until its execution has finished.
 
 .. literalinclude:: examples/job_ids.py
@@ -170,8 +164,8 @@ optionally with a duration to defer rerunning the jobs by:
 Health checks
 .............
 
-*arq* will automatically record some info about its current state in redis every ``health_check_interval`` seconds.
-That key/value will expire after ``health_check_interval + 1`` seconds so you can be sure if the variable exists *arq*
+*narq* will automatically record some info about its current state in redis every ``health_check_interval`` seconds.
+That key/value will expire after ``health_check_interval + 1`` seconds so you can be sure if the variable exists *narq*
 is alive and kicking (technically you can be sure it was alive and kicking ``health_check_interval`` seconds ago).
 
 You can run a health check with the CLI (assuming you're using the first example above)::
@@ -203,13 +197,13 @@ Usage roughly shadows `cron <https://helpmanual.io/man8/cron/>`_ except ``None``
 As per the example sets can be used to run at multiple of the given unit.
 
 Note that ``second`` defaults to ``0`` so you don't in inadvertently run jobs every second and ``microsecond``
-defaults to ``123456`` so you don't inadvertently run jobs every microsecond and so *arq* avoids enqueuing jobs
+defaults to ``123456`` so you don't inadvertently run jobs every microsecond and so *narq* avoids enqueuing jobs
 at the top of a second when the world is generally slightly busier.
 
 Custom job serializers
 ......................
 
-By default, *arq* will use the built-in ``pickle`` module to serialize and deserialize jobs. If you wish to
+By default, *narq* will use the built-in ``pickle`` module to serialize and deserialize jobs. If you wish to
 use an alternative serialization methods, you can do so by specifying them when creating the connection pool
 and the worker settings. A serializer function takes a Python object and returns a binary representation
 encoded in a ``bytes`` object. A deserializer function, on the other hand, creates Python objects out of
@@ -250,5 +244,4 @@ Reference
 .. |license| image:: https://img.shields.io/pypi/l/arq.svg
    :target: https://github.com/samuelcolvin/arq
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
-.. _watchgod: https://pypi.org/project/watchgod/
 .. _rq: http://python-rq.org/
