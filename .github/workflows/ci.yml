@@ -41,8 +41,8 @@ jobs:
 
     - name: install dependencies
       run: |
-        make install
-        pip freeze
+        pip install poetry
+        poetry install
 
     - name: lint
       run: pre-commit run --all-files
