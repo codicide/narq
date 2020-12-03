@@ -2,7 +2,7 @@
 name = "narq"
 version = "0.1.0"
 description = "Job queues in python with asyncio and redis"
-authors = ["Samuel Colvin <s@muelcolvin.com>", "Tim Orme <tim@sironamedical.com>"]
+authors = ["Samuel Colvin <s@muelcolvin.com>", "Tim Orme <TimothyOrme@gmail.com>"]
 homepage = "https://github.com/codicide/narq"
 license = "MIT"
 classifiers = [
