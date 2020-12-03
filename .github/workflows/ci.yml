@@ -42,6 +42,7 @@ jobs:
     - name: install dependencies
       run: |
         pip install poetry
+        poetry env info
         poetry install
 
     - name: lint
