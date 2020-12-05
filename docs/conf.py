@@ -19,7 +19,8 @@
 #
 import os
 import sys
-sys.path.append(os.path.abspath('../narq'))
+import toml
+sys.path.append(os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
 
@@ -67,8 +68,8 @@ author = 'Samuel Colvin'
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-
-from narq.version import VERSION
+data = toml.load(os.path.abspath("../pyproject.toml"))
+VERSION = data["tool"]["poetry"]["version"]
 # The short X.Y version. Could change this if you're updating docs for a previous version.
 version = f'v{VERSION}'
 # The full version, including alpha/beta/rc tags.

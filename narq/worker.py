@@ -272,7 +272,7 @@ class Worker:
         """Run :func:`narq.worker.Worker.async_run`, check for failed jobs.
 
         :return: number of completed jobs
-        :raises :class:`narq.worker.FailedJobs`: if any jobs have failed.
+        :raises narq.worker.FailedJobs: if any jobs have failed.
         """
         if retry_jobs is not None:
             self.retry_jobs = retry_jobs
