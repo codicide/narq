@@ -138,6 +138,31 @@ async def test_defer_by(narq_redis: NarqRedis):
     assert ts + 21000 > score
 
 
+async def test_expires(narq_redis: NarqRedis):
+    j1 = await narq_redis.enqueue_job('foobar', _job_id='job_id', _expires=1)
+    assert isinstance(j1, Job)
+    # Wait 2 seconds
+    job_data = await narq_redis.get("narq:job:job_id", encoding=None)
+    assert job_data is not None
+    await asyncio.sleep(2)
+    job_id = await narq_redis.zrange(default_queue_name, 0, 1)
+    assert job_id[0] == 'job_id'
+    job_data = await narq_redis.get("narq:job:job_id")
+    assert job_data is None
+
+
+async def test_expires_never(narq_redis: NarqRedis):
+    j1 = await narq_redis.enqueue_job('foobar', _job_id='job_id', _expires=None)
+    assert isinstance(j1, Job)
+    # Wait 2 seconds
+    await asyncio.sleep(2)
+    job_id = await narq_redis.zrange(default_queue_name, 0, 1)
+    assert job_id[0] == 'job_id'
+    job_ttl = await narq_redis.ttl("narq:job:job_id")
+    # TTL of -1 indicates no expiration
+    assert job_ttl == -1
+
+
 async def test_mung(narq_redis: NarqRedis, worker):
     """
     check a job can't be enqueued multiple times with the same id
