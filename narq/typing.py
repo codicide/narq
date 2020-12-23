@@ -1,7 +1,7 @@
 """Module to hold classes used for type hints."""
 import sys
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Set, Union
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, Literal
@@ -15,7 +15,6 @@ __all__ = (
     'SecondsTimedelta',
     'WorkerCoroutine',
     'StartupShutdown',
-    'WorkerSettingsType',
 )
 
 
@@ -53,14 +52,3 @@ class StartupShutdown(Protocol):
     async def __call__(self, ctx: Dict[Any, Any]) -> Any:  # pragma: no cover
         """Call the method."""
         pass
-
-
-class WorkerSettingsBase(Protocol):
-    functions: Sequence[Union[WorkerCoroutine, 'Function']]
-    cron_jobs: Optional[Sequence['CronJob']] = None
-    on_startup: Optional[StartupShutdown] = None
-    on_shutdown: Optional[StartupShutdown] = None
-    # and many more...
-
-
-WorkerSettingsType = Union[Dict[str, Any], Type[WorkerSettingsBase]]

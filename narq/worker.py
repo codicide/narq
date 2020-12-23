@@ -28,7 +28,7 @@ from .constants import (
 from .utils import args_to_string, ms_to_datetime, poll, timestamp_ms, to_ms, to_seconds, to_unix_ms, truncate
 
 if TYPE_CHECKING:
-    from .typing import WorkerCoroutine, StartupShutdown, SecondsTimedelta, WorkerSettingsType  # noqa F401
+    from .typing import WorkerCoroutine, StartupShutdown, SecondsTimedelta  # noqa F401
 
 logger = logging.getLogger('narq.worker')
 no_result = object()
@@ -43,6 +43,34 @@ class Function:
     timeout_s: Optional[float]
     keep_result_s: Optional[float]
     max_tries: Optional[int]
+
+
+@dataclass
+class WorkerSettings:
+    """Worker settings dataclass."""
+
+    functions: Sequence[Union[Function, 'WorkerCoroutine']]
+    queue_name: Optional[str] = default_queue_name
+    cron_jobs: Optional[Sequence[CronJob]] = None
+    redis_settings: Optional[RedisSettings] = None
+    redis_pool: Optional[NarqRedis] = None
+    burst: bool = False
+    on_startup: Optional['StartupShutdown'] = None
+    on_shutdown: Optional['StartupShutdown'] = None
+    handle_signals: bool = True
+    max_jobs: int = 10
+    job_timeout: 'SecondsTimedelta' = 300
+    keep_result: 'SecondsTimedelta' = 3600
+    poll_delay: 'SecondsTimedelta' = 0.5
+    queue_read_limit: Optional[int] = None
+    max_tries: int = 5
+    health_check_interval: 'SecondsTimedelta' = 3600
+    health_check_key: Optional[str] = None
+    ctx: Optional[Dict[Any, Any]] = None
+    retry_jobs: bool = True
+    max_burst_jobs: int = -1
+    job_serializer: Optional[Serializer] = None
+    job_deserializer: Optional[Deserializer] = None
 
 
 def func(
@@ -665,19 +693,19 @@ class Worker:
         )
 
 
-def get_kwargs(settings_cls: 'WorkerSettingsType') -> Dict[str, NameError]:
+def get_kwargs(settings_cls: WorkerSettings) -> Dict[str, NameError]:
     """Return the keywords from the WorkerSettings."""
     worker_args = set(inspect.signature(Worker).parameters.keys())
     d = settings_cls if isinstance(settings_cls, dict) else settings_cls.__dict__
     return {k: v for k, v in d.items() if k in worker_args}
 
 
-def create_worker(settings_cls: 'WorkerSettingsType', **kwargs: Any) -> Worker:
+def create_worker(settings_cls: WorkerSettings, **kwargs: Any) -> Worker:
     """Create a worker from the given settings class."""
     return Worker(**{**get_kwargs(settings_cls), **kwargs})  # type: ignore
 
 
-def run_worker(settings_cls: 'WorkerSettingsType', **kwargs: Any) -> Worker:
+def run_worker(settings_cls: WorkerSettings, **kwargs: Any) -> Worker:
     """Run a worker based on the given settings class."""
     worker = create_worker(settings_cls, **kwargs)
     worker.run()
@@ -705,7 +733,7 @@ async def async_check_health(
     return r
 
 
-def check_health(settings_cls: 'WorkerSettingsType') -> int:
+def check_health(settings_cls: WorkerSettings) -> int:
     """Run a health check on the worker and return the appropriate exit code.
 
     :return: 0 if successful, 1 if not
