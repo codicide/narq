@@ -4,6 +4,7 @@ from narq import create_pool
 from narq.connections import RedisSettings
 # requires `pip install devtools`, used for pretty printing of job info
 from devtools import debug
+from narq.worker import WorkerSettings
 
 async def the_task(ctx):
     print('running the task')
@@ -49,8 +50,10 @@ async def main():
     >  42
     """
 
-class WorkerSettings:
-    functions = [the_task]
+def worker_pre_init() -> WorkerSettings:
+    return WorkerSettings(
+        functions=[the_task]
+    )
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

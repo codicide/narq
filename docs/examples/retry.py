@@ -2,6 +2,7 @@ import asyncio
 from aiohttp import ClientSession
 from narq import create_pool, Retry
 from narq.connections import RedisSettings
+from narq.worker import WorkerSettings
 
 async def download_content(ctx, url):
     session: ClientSession = ctx['session']
@@ -24,10 +25,12 @@ async def main():
     redis = await create_pool(RedisSettings())
     await redis.enqueue_job('download_content', 'https://httpbin.org/status/503')
 
-class WorkerSettings:
-    functions = [download_content]
-    on_startup = startup
-    on_shutdown = shutdown
+def worker_pre_init() -> WorkerSettings:
+    return WorkerSettings(
+        functions=[download_content],
+        on_startup=startup,
+        on_shutdown=shutdown,
+    )
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

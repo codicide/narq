@@ -49,7 +49,7 @@ class Function:
 class WorkerSettings:
     """Worker settings dataclass."""
 
-    functions: Sequence[Union[Function, 'WorkerCoroutine']]
+    functions: Optional[Sequence[Union[Function, 'WorkerCoroutine']]] = None
     queue_name: Optional[str] = default_queue_name
     cron_jobs: Optional[Sequence[CronJob]] = None
     redis_settings: Optional[RedisSettings] = None

@@ -1,6 +1,7 @@
 import asyncio
 from aiohttp import ClientSession
 from narq import create_pool
+from narq.worker import WorkerSettings
 from narq.connections import RedisSettings
 
 async def download_content(ctx, url):
@@ -23,10 +24,12 @@ async def main():
 
 # WorkerSettings defines the settings to use when creating the work,
 # it's used by the narq cli
-class WorkerSettings:
-    functions = [download_content]
-    on_startup = startup
-    on_shutdown = shutdown
+def worker_pre_init() -> WorkerSettings:
+    return WorkerSettings(
+        functions=[download_content],
+        on_startup=startup,
+        on_shutdown=shutdown,
+    )
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

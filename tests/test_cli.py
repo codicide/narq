@@ -31,7 +31,7 @@ def test_help():
     runner = CliRunner()
     result = runner.invoke(cli, ['--help'])
     assert result.exit_code == 0
-    assert result.output.startswith('Usage: narq [OPTIONS] WORKER_SETTINGS\n')
+    assert result.output.startswith('Usage: narq [OPTIONS] WORKER_PRE_INIT\n')
 
 
 def test_run():
