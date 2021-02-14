@@ -15,23 +15,23 @@ verbose_help = 'Enable verbose output.'
 
 @click.command('narq')
 @click.version_option(VERSION, '-V', '--version', prog_name='narq')
-@click.argument('worker-settings', type=str, required=True)
+@click.argument('worker-pre-init', type=str, required=True)
 @click.option('--burst/--no-burst', default=None, help=burst_help)
 @click.option('--check', is_flag=True, help=health_check_help)
-def cli(*, worker_settings: str, burst: bool, check: bool) -> None:
+def cli(*, worker_pre_init: str, burst: bool, check: bool) -> None:
     """
     Job queues in python with asyncio and redis.
 
     CLI to run the narq worker.
     """
     sys.path.append(os.getcwd())
-    module_name, func_name = worker_settings.split(":")
+    module_name, func_name = worker_pre_init.split(":")
     module = importlib.import_module(module_name)
-    func = getattr(module, func_name)
-    worker_settings = func()
+    worker_pre_init_func = getattr(module, func_name)
+    worker_settings = worker_pre_init_func()
 
     if not isinstance(worker_settings, WorkerSettings):
-        raise RuntimeError(f"{worker_settings} must return a WorkerSettings instance.")
+        raise RuntimeError(f"{worker_pre_init} must return a WorkerSettings instance.")
 
     if check:
         exit(check_health(worker_settings))
