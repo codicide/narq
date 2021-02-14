@@ -1,7 +1,7 @@
 """Module to hold classes used for type hints."""
 import sys
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Set, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Set, Union
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, Literal
@@ -28,17 +28,11 @@ WeekdayOptionType = Union[OptionType, Literal['mon', 'tues', 'wed', 'thurs', 'fr
 SecondsTimedelta = Union[int, float, timedelta]
 
 
-class WorkerCoroutine(Protocol):
-    """Protocol for a worker coroutine.
-
-    Requires context to be passed, and then any args to the function.
-    """
-
-    __qualname__: str
-
-    async def __call__(self, ctx: Dict[Any, Any], *args: Any, **kwargs: Any) -> Any:  # pragma: no cover
-        """Call coroutine."""
-        pass
+# Originally this was defined as a protocol, which would be nice, but there are limitations with those and loosely
+# defined method signatures.
+# https://github.com/python/mypy/issues/9560
+# https://github.com/python/mypy/issues/5876
+WorkerCoroutine = Callable[..., Awaitable[Any]]
 
 
 class StartupShutdown(Protocol):
