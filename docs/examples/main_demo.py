@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import sys
 from aiohttp import ClientSession
 from narq import create_pool
 from narq.worker import WorkerSettings
@@ -25,6 +27,7 @@ async def main():
 # WorkerSettings defines the settings to use when creating the work,
 # it's used by the narq cli
 def worker_pre_init() -> WorkerSettings:
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     return WorkerSettings(
         functions=[download_content],
         on_startup=startup,

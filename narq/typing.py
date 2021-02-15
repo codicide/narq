@@ -4,9 +4,9 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Set, Union
 
 if sys.version_info >= (3, 8):
-    from typing import Protocol, Literal
+    from typing import Literal
 else:
-    from typing_extensions import Protocol, Literal
+    from typing_extensions import Literal
 
 __all__ = (
     'OptionType',
@@ -28,21 +28,9 @@ WeekdayOptionType = Union[OptionType, Literal['mon', 'tues', 'wed', 'thurs', 'fr
 SecondsTimedelta = Union[int, float, timedelta]
 
 
-# Originally this was defined as a protocol, which would be nice, but there are limitations with those and loosely
+# Originally these were defined as a protocol, which would be nice, but there are limitations with those and loosely
 # defined method signatures.
 # https://github.com/python/mypy/issues/9560
 # https://github.com/python/mypy/issues/5876
 WorkerCoroutine = Callable[..., Awaitable[Any]]
-
-
-class StartupShutdown(Protocol):
-    """Protocol for a startup or shutdown method.
-
-    Requires the context and then any addtional args.
-    """
-
-    __qualname__: str
-
-    async def __call__(self, ctx: Dict[Any, Any]) -> Any:  # pragma: no cover
-        """Call the method."""
-        pass
+StartupShutdown = Callable[[Dict[Any, Any]], Awaitable[Any]]

@@ -92,11 +92,11 @@ Simple Usage
 
 To enqueue the jobs, simply run the script::
 
-    python demo.py
+    python main_demo.py
 
 To execute the jobs, either after running ``demo.py`` or before/during::
 
-    narq demo.WorkerSettings
+    narq main_demo:worker_pre_init
 
 Append ``--burst`` to stop the worker once all jobs have finished. See :class:`arq.worker.Worker` for more available
 properties of ``WorkerSettings``.
@@ -104,6 +104,18 @@ properties of ``WorkerSettings``.
 For details on the *narq* CLI::
 
     narq --help
+
+Worker Pre-Init
+...............
+
+The ``narq`` CLI requires an argument that specifies a ``pre-init`` function.  This function runs prior to the creation
+of the ``Worker`` object, and is responsible for configuring any process-level requirements, and returning the settings
+for the worker itself.
+
+Because ``narq`` aims to be un-opinionated about logging, this is also common place to configure log settings.  A
+minimal ``pre-init`` would be:
+
+.. literalinclude:: examples/pre_init.py
 
 Startup & Shutdown coroutines
 .............................
