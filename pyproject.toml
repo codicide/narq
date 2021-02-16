@@ -60,6 +60,15 @@ line-length = 120
 target-version = ['py37']
 skip-string-normalization = true
 
+# * Setuptools 50.0 is fundamentally broken in numerous ways (including ways
+#   that both break and do not break installation of this project) and *MUST*
+#   thus be blacklisted. See also:
+#   https://github.com/pypa/setuptools/issues/2350
+#   https://github.com/pypa/setuptools/issues/2352
+#   https://github.com/pypa/setuptools/issues/2353
 [build-system]
-requires = ["poetry>=0.12"]
+requires = [
+        "poetry>=0.12",
+        'setuptools!=50.0'
+]
 build-backend = "poetry.masonry.api"
